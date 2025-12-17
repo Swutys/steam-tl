@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Steam Fiyatlarını Anında TL Olarak Gör | Tarayıcı Eklentisi</title>
+  <meta
+    name="description"
+    content="Steam dolar fiyatlarının yanına otomatik TL karşılığını ekleyen hafif, ücretsiz ve güvenli Chrome / Edge eklentisi."
+  />
+  <style>
+    :root {
+      --bg-main: #0b1220;
+      --bg-elevated: #101827;
+      --bg-card: #111827;
+      --bg-card-soft: #111827;
+      --accent-blue: #60a5fa;
+      --accent-blue-soft: rgba(96, 165, 250, 0.2);
+      --accent-green: #34d399;
+      --accent-green-soft: rgba(52, 211, 153, 0.18);
+      --accent-danger: #f87171;
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --border-subtle: rgba(148, 163, 184, 0.25);
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+      --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.85);
+      --shadow-card: 0 14px 30px rgba(15, 23, 42, 0.7);
+      --transition-fast: 0.18s ease-out;
+      --transition-med: 0.25s ease-out;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(52, 211, 153, 0.16), transparent 60%),
+        #020617;
+      color: var(--text-main);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Header */
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(14px);
+      background: linear-gradient(
+        to bottom,
+        rgba(15, 23, 42, 0.94),
+        rgba(15, 23, 42, 0.8),
+        transparent
+      );
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 0.5rem;
+      gap: 1.5rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: #f9fafb;
+    }
+
+    .logo-mark {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 20%, #60a5fa, #22c55e);
+      box-shadow:
+        0 0 18px rgba(96, 165, 250, 0.8),
+        0 0 26px rgba(34, 197, 94, 0.55);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo-mark::after {
+      content: "";
+      position: absolute;
+      inset: 35% 20%;
+      border-radius: 999px;
+      border: 2px solid rgba(15, 23, 42, 0.9);
+      border-top-color: transparent;
+      border-right-color: transparent;
+      transform: rotate(-25deg);
+    }
+
+    .logo-text-main {
+      font-size: 0.96rem;
+      text-transform: uppercase;
+    }
+
+    .logo-text-sub {
+      font-size: 0.7rem;
+      opacity: 0.6;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 1.1rem;
+      font-size: 0.9rem;
+    }
+
+    .nav a {
+      color: var(--text-muted);
+      position: relative;
+      padding-bottom: 0.1rem;
+      transition: color var(--transition-fast);
+    }
+
+    .nav a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -0.2rem;
+      width: 0;
+      height: 2px;
+      border-radius: 999px;
+      background: linear-gradient(to right, var(--accent-blue), var(--accent-green));
+      transition: width var(--transition-fast);
+    }
+
+    .nav a:hover {
+      color: #e5e7eb;
+    }
+
+    .nav a:hover::after {
+      width: 100%;
+    }
+
+    /* Buttons */
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      padding: 0.6rem 1.3rem;
+      font-size: 0.92rem;
+      transition:
+        background-color var(--transition-med),
+        color var(--transition-med),
+        box-shadow var(--transition-med),
+        transform var(--transition-fast),
+        border-color var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+      color: #020617;
+      box-shadow:
+        0 14px 30px rgba(37, 99, 235, 0.35),
+        0 4px 14px rgba(34, 197, 94, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow:
+        0 18px 40px rgba(37, 99, 235, 0.42),
+        0 8px 22px rgba(34, 197, 94, 0.5);
+      filter: brightness(1.05);
+    }
+
+    .btn-outline {
+      background: rgba(15, 23, 42, 0.7);
+      border-color: rgba(148, 163, 184, 0.5);
+      color: var(--text-main);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent-blue);
+      background: rgba(15, 23, 42, 0.95);
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.9);
+      transform: translateY(-1px);
+    }
+
+    .btn-lg {
+      padding: 0.85rem 1.9rem;
+      font-size: 1rem;
+    }
+
+    .btn-icon {
+      font-size: 1.1rem;
+    }
+
+    .nav-cta {
+      margin-left: 0.6rem;
+    }
+
+    /* Hero */
+
+    .hero {
+      padding: 3.2rem 0 2.8rem;
+    }
+
+    .hero-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr);
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      padding: 0.18rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      color: var(--accent-green);
+      background: rgba(6, 95, 70, 0.25);
+      margin-bottom: 0.9rem;
+    }
+
+    .hero-kicker-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent-green);
+      box-shadow: 0 0 12px rgba(52, 211, 153, 0.9);
+    }
+
+    .hero-title {
+      font-size: clamp(2rem, 3vw + 0.8rem, 2.7rem);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      margin-bottom: 0.8rem;
+    }
+
+    .hero-title span {
+      background: linear-gradient(to right, #7dd3fc, #a7f3d0);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-subtitle {
+      color: var(--text-muted);
+      font-size: 0.98rem;
+      max-width: 36rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .badge {
+      font-size: 0.78rem;
+      padding: 0.16rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--text-muted);
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .badge-pill {
+      border-color: rgba(96, 165, 250, 0.6);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      align-items: center;
+      margin-bottom: 1.2rem;
+    }
+
+    .hero-note {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .hero-note span {
+      color: var(--accent-blue);
+    }
+
+    /* Hero visual */
+
+    .hero-visual {
+      position: relative;
+    }
+
+    .hero-card {
+      position: relative;
+      border-radius: var(--radius-xl);
+      background:
+        radial-gradient(circle at top left, rgba(59, 130, 246, 0.3), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.2), transparent 65%),
+        linear-gradient(135deg, #020617, #020617);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      padding: 1rem;
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+      transform: translateY(2px);
+    }
+
+    .hero-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.9);
+      margin-bottom: 0.8rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .hero-card-title {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .hero-dots {
+      display: flex;
+      gap: 0.2rem;
+    }
+
+    .hero-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #f97373;
+    }
+
+    .hero-dot:nth-child(2) {
+      background: #facc15;
+    }
+
+    .hero-dot:nth-child(3) {
+      background: #22c55e;
+    }
+
+    .hero-card-body {
+      background: linear-gradient(to bottom right, #020617, #020617);
+      border-radius: calc(var(--radius-xl) - 8px);
+      border: 1px solid rgba(30, 64, 175, 0.7);
+      padding: 0.85rem 0.85rem 0.95rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.4rem;
+    }
+
+    .hero-card-game {
+      font-size: 0.82rem;
+      color: #e5e7eb;
+    }
+
+    .hero-card-tag {
+      font-size: 0.72rem;
+      padding: 0.06rem 0.45rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--accent-blue);
+      border: 1px solid rgba(37, 99, 235, 0.7);
+    }
+
+    .hero-card-prices {
+      display: grid;
+      grid-template-columns: 1.1fr 1.4fr;
+      gap: 0.8rem;
+      align-items: center;
+      margin-top: 0.4rem;
+    }
+
+    .hero-price-block {
+      padding: 0.5rem 0.6rem;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(30, 64, 175, 0.9);
+      display: grid;
+      gap: 0.15rem;
+      font-size: 0.78rem;
+    }
+
+    .hero-price-label {
+      color: var(--text-muted);
+    }
+
+    .hero-price-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+
+    .hero-price-tl {
+      border-color: rgba(34, 197, 94, 0.9);
+      box-shadow: 0 0 18px rgba(34, 197, 94, 0.4);
+      position: relative;
+    }
+
+    .hero-price-tl .hero-price-value {
+      font-size: 1.02rem;
+      color: var(--accent-green);
+    }
+
+    .hero-price-chip {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      font-size: 0.7rem;
+      padding: 0.05rem 0.4rem;
+      border-radius: 999px;
+      background: rgba(22, 163, 74, 0.25);
+      color: var(--accent-green);
+      border: 1px solid rgba(22, 163, 74, 0.55);
+    }
+
+    .hero-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.75rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      opacity: 0.9;
+    }
+
+    .hero-rate {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .hero-rate-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--accent-green);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.9);
+    }
+
+    .hero-floating-tag {
+      position: absolute;
+      right: -6px;
+      top: 22%;
+      transform: translateY(-50%);
+      padding: 0.45rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(8, 47, 73, 0.95);
+      border: 1px solid rgba(125, 211, 252, 0.9);
+      font-size: 0.78rem;
+      color: #e0f2fe;
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.9);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .hero-floating-tag span:first-child {
+      font-size: 1rem;
+    }
+
+    .hero-floating-tag small {
+      font-size: 0.7rem;
+      opacity: 0.8;
+    }
+
+    /* Sections */
+
+    main {
+      padding-bottom: 2.8rem;
+    }
+
+    section {
+      padding: 1.8rem 0 0.4rem;
+    }
+
+    .section-header {
+      margin-bottom: 1.4rem;
+    }
+
+    .section-kicker {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent-blue);
+      margin-bottom: 0.25rem;
+    }
+
+    .section-title {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .section-subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      max-width: 32rem;
+    }
+
+    /* Cards & layouts */
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.2rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.2rem;
+    }
+
+    .card {
+      position: relative;
+      border-radius: var(--radius-lg);
+      background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.96));
+      border: 1px solid var(--border-subtle);
+      padding: 1rem;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      transition:
+        transform var(--transition-med),
+        box-shadow var(--transition-med),
+        border-color var(--transition-fast),
+        background var(--transition-med);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.13), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(52, 211, 153, 0.1), transparent 55%);
+      opacity: 0;
+      transition: opacity var(--transition-med);
+      z-index: -1;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 38px rgba(15, 23, 42, 0.95);
+      border-color: rgba(96, 165, 250, 0.7);
+      background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.99));
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card-header-row {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .card-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.9);
+      flex-shrink: 0;
+    }
+
+    .card-icon.step {
+      background: radial-gradient(circle at 30% 20%, rgba(56, 189, 248, 0.8), rgba(59, 130, 246, 0.4));
+      border: none;
+      color: #0b1120;
+      font-weight: 700;
+      font-size: 0.96rem;
+    }
+
+    .card-title {
+      font-size: 0.98rem;
+      font-weight: 600;
+      margin-bottom: 0.1rem;
+    }
+
+    .card-text {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .card-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.7rem;
+      padding: 0.08rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      color: var(--text-muted);
+      margin-top: 0.55rem;
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    .card-chip.dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--accent-blue);
+      box-shadow: 0 0 10px rgba(96, 165, 250, 0.8);
+    }
+
+    .feature-tag {
+      background: rgba(15, 23, 42, 0.95);
+      border-color: rgba(96, 165, 250, 0.8);
+      color: #dbeafe;
+      padding-inline: 0.65rem;
+    }
+
+    .feature-tag.green {
+      border-color: rgba(52, 211, 153, 0.9);
+      color: #bbf7d0;
+    }
+
+    .feature-tag.red {
+      border-color: rgba(239, 68, 68, 0.9);
+      color: #fecaca;
+    }
+
+    /* Step list */
+
+    .steps-note {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 0.45rem;
+    }
+
+    .steps-note strong {
+      color: var(--accent-blue);
+      font-weight: 500;
+    }
+
+    /* Installation */
+
+    .install-wrapper {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr);
+      gap: 1.4rem;
+      align-items: start;
+    }
+
+    .install-steps {
+      list-style: none;
+      counter-reset: install-steps;
+      display: grid;
+      gap: 0.7rem;
+      margin-top: 0.4rem;
+    }
+
+    .install-step {
+      position: relative;
+      padding-left: 2.3rem;
+      font-size: 0.9rem;
+      color: var(--text-main);
+    }
+
+    .install-step::before {
+      counter-increment: install-steps;
+      content: counter(install-steps);
+      position: absolute;
+      left: 0;
+      top: 0.1rem;
+      width: 1.6rem;
+      height: 1.6rem;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: radial-gradient(circle at 30% 20%, #60a5fa, #22c55e);
+      color: #020617;
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.9);
+    }
+
+    .install-note {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.6rem;
+    }
+
+    .install-note span {
+      color: var(--accent-green);
+    }
+
+    .install-panel {
+      border-radius: var(--radius-lg);
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      padding: 0.9rem 1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      box-shadow: var(--shadow-card);
+    }
+
+    .install-panel code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+        monospace;
+      background: rgba(15, 23, 42, 0.95);
+      padding: 0.16rem 0.45rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      font-size: 0.78rem;
+      color: #e5e7eb;
+    }
+
+    .install-panel strong {
+      color: var(--accent-blue);
+      font-weight: 500;
+    }
+
+    /* Download section */
+
+    .download-section {
+      padding-top: 2.2rem;
+    }
+
+    .download-card {
+      border-radius: 999px;
+      border: 1px solid rgba(96, 165, 250, 0.8);
+      background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.6), rgba(30, 64, 175, 0.95));
+      box-shadow:
+        0 20px 45px rgba(30, 64, 175, 0.9),
+        0 0 32px rgba(59, 130, 246, 0.8);
+      padding: 0.75rem 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.9rem;
+    }
+
+    .download-text {
+      font-size: 0.9rem;
+      color: #dbeafe;
+    }
+
+    .download-text strong {
+      color: #eff6ff;
+    }
+
+    .download-text small {
+      display: block;
+      font-size: 0.78rem;
+      opacity: 0.8;
+      margin-top: 0.12rem;
+    }
+
+    .download-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .download-actions .btn-primary {
+      background: #f9fafb;
+      color: #0b1120;
+      box-shadow:
+        0 14px 30px rgba(15, 23, 42, 0.85),
+        0 0 22px rgba(191, 219, 254, 0.7);
+    }
+
+    .download-actions .btn-primary:hover {
+      filter: brightness(1.02);
+      transform: translateY(-1px) scale(1.01);
+    }
+
+    .download-link-inline {
+      font-size: 0.78rem;
+      color: #e0f2fe;
+      opacity: 0.9;
+    }
+
+    .download-link-inline a {
+      text-decoration: underline;
+      text-decoration-style: dotted;
+      text-underline-offset: 2px;
+    }
+
+    .download-link-inline a:hover {
+      text-decoration-style: solid;
+    }
+
+    /* Footer */
+
+    footer {
+      border-top: 1px solid rgba(30, 64, 175, 0.75);
+      margin-top: 2.8rem;
+      padding: 0.9rem 0 1.4rem;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 1));
+    }
+
+    .footer-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+    }
+
+    .footer-note strong {
+      color: var(--accent-blue);
+      font-weight: 500;
+    }
+
+    .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-pill {
+      padding: 0.1rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* Responsive */
+
+    @media (max-width: 900px) {
+      .hero-inner {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 2rem;
+      }
+
+      .hero {
+        padding-top: 2.4rem;
+      }
+
+      .hero-visual {
+        order: -1;
+      }
+
+      .hero-floating-tag {
+        right: 1rem;
+      }
+
+      .grid-3,
+      .grid-2,
+      .install-wrapper {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .download-card {
+        border-radius: 18px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .header-inner {
+        flex-wrap: wrap;
+      }
+
+      .nav {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 0.7rem;
+      }
+
+      .nav-cta {
+        margin-left: 0;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .hero-title {
+        font-size: 1.85rem;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .hero-card {
+        padding: 0.7rem;
+      }
+
+      .hero-card-body {
+        padding: 0.7rem 0.7rem 0.8rem;
+      }
+
+      .hero-card-prices {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .download-card {
+        padding-inline: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-inner">
+        <div class="logo">
+          <div class="logo-mark"></div>
+          <div>
+            <div class="logo-text-main">Steam TL</div>
+            <div class="logo-text-sub">Fiyat çevirici eklenti</div>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <a href="#nasil-calisir">Nasıl Çalışır?</a>
+          <a href="#ozellikler">Özellikler</a>
+          <a href="#kurulum">Kurulum</a>
+          <a href="#indir" class="btn btn-primary nav-cta">
+            <span class="btn-icon">⬇</span>
+            <span>Eklentiyi İndir</span>
+          </a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section id="hero" class="hero">
+      <div class="container">
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <div class="hero-kicker">
+              <span class="hero-kicker-dot"></span>
+              Hafif · Reklamsız · Chrome &amp; Edge uyumlu
+            </div>
+            <h1 class="hero-title">
+              Steam Fiyatlarını <span>Anında TL Olarak Gör</span>
+            </h1>
+            <p class="hero-subtitle">
+              Dolar fiyatlarının yanına otomatik olarak güncel TL karşılığını ekleyen, hesabınıza dokunmayan
+              basit ve hızlı tarayıcı eklentisi.
+            </p>
+
+            <div class="hero-badges">
+              <span class="badge badge-pill">Gerçek zamanlı kur</span>
+              <span class="badge">Hesap verisi okumaz</span>
+              <span class="badge">Yalnızca fiyat satırlarını işler</span>
+            </div>
+
+            <div class="hero-actions">
+              <a href="#indir" class="btn btn-primary btn-lg">
+                <span class="btn-icon">⬇</span>
+                <span>Eklentiyi İndir</span>
+              </a>
+              <a href="#nasil-calisir" class="btn btn-outline btn-lg">
+                <span>Nasıl çalıştığını gör</span>
+              </a>
+            </div>
+
+            <p class="hero-note">
+              Sadece Steam sayfanı aç, <span>fiyatların yanına TL otomatik eklensin.</span>
+            </p>
+          </div>
+
+          <div class="hero-visual">
+            <div class="hero-card">
+              <div class="hero-card-header">
+                <div class="hero-dots">
+                  <span class="hero-dot"></span>
+                  <span class="hero-dot"></span>
+                  <span class="hero-dot"></span>
+                </div>
+                <div class="hero-card-title">
+                  <span>Steam Mağaza</span>
+                </div>
+                <span>steam-tl eklentisi aktif</span>
+              </div>
+
+              <div class="hero-card-body">
+                <div class="hero-card-header-row">
+                  <span class="hero-card-game">Elden Ring</span>
+                  <span class="hero-card-tag">Ön sipariş · -10%</span>
+                </div>
+
+                <div class="hero-card-prices">
+                  <div class="hero-price-block">
+                    <span class="hero-price-label">Orijinal fiyat (USD)</span>
+                    <span class="hero-price-value">$ 59.99</span>
+                    <span class="card-chip">
+                      <span class="card-chip dot"></span>
+                      Steam fiyatı
+                    </span>
+                  </div>
+                  <div class="hero-price-block hero-price-tl">
+                    <span class="hero-price-label">Eklenti ile görünür TL</span>
+                    <span class="hero-price-value">≈ 1.765,00 TL</span>
+                    <span class="hero-price-chip">Güncel kur: 29,42</span>
+                  </div>
+                </div>
+
+                <div class="hero-card-footer">
+                  <span class="hero-rate">
+                    <span class="hero-rate-dot"></span>
+                    Kur 60 saniyede bir yenilenir
+                  </span>
+                  <span>Hesap verilerine erişim yok</span>
+                </div>
+              </div>
+
+              <div class="hero-floating-tag">
+                <span>⚡</span>
+                <div>
+                  <div>Otomatik TL dönüştürme</div>
+                  <small>Sayfayı yenilemeden çalışır</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Nasıl Çalışır -->
+    <section id="nasil-calisir">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-kicker">Çalışma mantığı</div>
+          <h2 class="section-title">Nasıl Çalışır?</h2>
+          <p class="section-subtitle">
+            Eklenti, Steam sayfasında gördüğünüz fiyat satırlarını izleyerek hiçbir kişisel verinize dokunmadan
+            yalnızca fiyat metinlerini TL ile zenginleştirir.
+          </p>
+        </div>
+
+        <div class="grid-3">
+          <article class="card">
+            <div class="card-header-row">
+              <div class="card-icon step">1</div>
+              <div>
+                <h3 class="card-title">Fiyatları algılar</h3>
+                <p class="card-text">
+                  Steam sayfasındaki oyun, sepet ve indirim alanlarındaki dolar fiyatlarını akıllı bir şekilde
+                  tespit eder.
+                </p>
+              </div>
+            </div>
+            <p class="card-text">
+              Yalnızca fiyat metinlerine dokunur; kullanıcı adı, e‑posta, arkadaş listesi gibi verilere kesinlikle
+              erişmez.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-header-row">
+              <div class="card-icon step">2</div>
+              <div>
+                <h3 class="card-title">Anlık kuru çeker</h3>
+                <p class="card-text">
+                  Güvenilir bir kur kaynağından (dış API) USD &rarr; TL kurunu periyodik olarak günceller.
+                </p>
+              </div>
+            </div>
+            <p class="card-text">
+              Kur bilgisi kısa aralıklarla yenilenir, böylece sepete eklediğiniz oyunları yaklaşık TL değeriyle
+              daha sağlıklı karşılaştırabilirsiniz.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-header-row">
+              <div class="card-icon step">3</div>
+              <div>
+                <h3 class="card-title">TL karşılığını ekler</h3>
+                <p class="card-text">
+                  Her fiyatın yanına okunaklı biçimde TL karşılığını ekler, orijinal fiyatı değiştirmez.
+                </p>
+              </div>
+            </div>
+            <p class="card-text">
+              Böylece hem orijinal dolar fiyatını hem de güncel TL karşılığını yan yana görür, karar vermeyi çok
+              daha kolaylaştırırsın.
+            </p>
+          </article>
+        </div>
+
+        <p class="steps-note">
+          * Eklenti yalnızca <strong>Steam web sayfası</strong> üzerinde çalışır, herhangi bir başka sitede aktif
+          olmaz.
+        </p>
+      </div>
+    </section>
+
+    <!-- Özellikler -->
+    <section id="ozellikler">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-kicker">Öne çıkanlar</div>
+          <h2 class="section-title">Özellikler</h2>
+          <p class="section-subtitle">
+            Performansa odaklı, güvenli ve tamamen ücretsiz bir araç. Kurulumu basit, kullanımı görünmez kadar
+            hafif.
+          </p>
+        </div>
+
+        <div class="grid-4 grid-3">
+          <article class="card">
+            <div class="card-header-row">
+              <div class="card-icon feature-tag">⚡</div>
+              <div>
+                <h3 class="card-title">Anlık kur güncelleme</h3>
+                <p class="card-text">
+                  USD &rarr; TL kuru, kısa aralıklarla arka planda yenilenir; Steam'i gezerken hep günceli
+                  görürsün.
+                </p>
+              </div>
+            </div>
+            <span class="card-chip feature-tag">
+              <span class="card-chip dot"></span>
+              Otomatik &middot; Elle ayar gerektirmez
+            </span>
+          </article>
+
+          <article class="card">
+            <div class="card-header-row">
+              <div class="card-icon feature-tag green">🛡</div>
+              <div>
+                <h3 class="card-title">Güvenli ve şeffaf</h3>
+                <p class="card-text">
+                  Hesabına, giriş bilgilerine veya ödeme yöntemlerine dokunmaz. Sadece sayfadaki text içeriklerini
+                  okur.
+                </p>
+              </div>
+            </div>
+            <span class="card-chip feature-tag green">
+              <span class="card-chip dot"></span>
+              Kişisel veri toplamadan çalışır
+            </span>
+          </article>
+
+          <article class="card">
+            <div class="card-header-row">
+              <div class="card-icon feature-tag">💸</div>
+              <div>
+                <h3 class="card-title">Tamamen ücretsiz</h3>
+                <p class="card-text">
+                  Eklentiyi istediğin kadar kullan, gizli ücret, reklam veya abonelik modeli yok.
+                </p>
+              </div>
+            </div>
+            <span class="card-chip feature-tag">
+              <span class="card-chip dot"></span>
+              Aç/kapa yapabileceğin hafif bir yardımcı
+            </span>
+          </article>
+
+          <article class="card">
+            <div class="card-header-row">
+              <div class="card-icon feature-tag red">🚀</div>
+              <div>
+                <h3 class="card-title">Hızlı &amp; hafif</h3>
+                <p class="card-text">
+                  Sadece gerekli alanlarda çalışır, gereksiz script yüklemez; düşük donanımlı sistemlerde bile
+                  akıcıdır.
+                </p>
+              </div>
+            </div>
+            <span class="card-chip feature-tag red">
+              <span class="card-chip dot"></span>
+              FPS ve ping değerlerini etkilemez
+            </span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kurulum -->
+    <section id="kurulum">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-kicker">Başlangıç</div>
+          <h2 class="section-title">Kurulum Adımları (Chrome / Edge)</h2>
+          <p class="section-subtitle">
+            Chrome veya Chromium tabanlı herhangi bir tarayıcıda (Edge dahil) birkaç adımda eklentiyi
+            yükleyebilirsin.
+          </p>
+        </div>
+
+        <div class="install-wrapper">
+          <div>
+            <ol class="install-steps">
+              <li class="install-step">Aşağıdaki <strong>ZIP dosyasını</strong> indir.</li>
+              <li class="install-step">
+                Tarayıcında adres çubuğuna
+                <strong>chrome://extensions</strong> yazıp uzantılar sayfasını aç.
+              </li>
+              <li class="install-step">
+                Sağ üstten <strong>Geliştirici modu</strong> seçeneğini aktif et (açık olduğundan emin ol).
+              </li>
+              <li class="install-step">
+                <strong>"Paketlenmemiş öğe yükle"</strong> butonuna tıkla ve indirdiğin ZIP'i çıkarttığın klasörü
+                seç.
+              </li>
+            </ol>
+
+            <p class="install-note">
+              Hepsi bu kadar! Steam sayfasını yeniden açtığında fiyatların yanına otomatik olarak
+              <span>TL karşılıklarını</span> göreceksin.
+            </p>
+          </div>
+
+          <aside class="install-panel">
+            <p>
+              Chrome dışındaki Chromium tabanlı tarayıcılarda da benzer şekilde
+              <code>Uzantılar</code> / <code>Eklentiler</code> sayfasına girerek
+              <strong>Geliştirici modu</strong> ile klasörü seçmen yeterli.
+            </p>
+            <br />
+            <p>
+              Kurulumdan sonra:
+            </p>
+            <ul style="margin-top: 0.35rem; padding-left: 1.1rem; color: var(--text-muted);">
+              <li style="margin-bottom: 0.2rem;">Tarayıcıyı yeniden başlatmana gerek yok.</li>
+              <li style="margin-bottom: 0.2rem;">Steam sekmelerini bir kez yenilemen yeterli.</li>
+              <li>Eklentiyi istemezsen uzantılar sayfasından tek tıkla devre dışı bırakabilirsin.</li>
+            </ul>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- İndirme -->
+    <section id="indir" class="download-section">
+      <div class="container">
+        <div class="download-card">
+          <div class="download-text">
+            <strong>Eklentiyi indir ve hemen dene</strong>
+            <small>Kaynak kod &amp; dosyalar ZIP içinde yer alır.</small>
+          </div>
+          <div class="download-actions">
+            <!-- İstenen indirme linki -->
+            <a href="steam-tl.zip" class="btn btn-primary btn-lg" download>
+              <span class="btn-icon">⬇</span>
+              <span>steam-tl.zip</span>
+            </a>
+            <div class="download-link-inline">
+              Alternatif olarak dosyaya doğrudan buradan da
+              <a href="steam-tl.zip">steam-tl.zip</a>
+              olarak ulaşabilirsin.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-note">
+          Bu proje, <strong>Valve</strong> veya <strong>Steam</strong> ile resmi olarak bağlantılı değildir;
+          yalnızca topluluk amaçlı hazırlanmış yardımcı bir eklentidir.
+        </div>
+        <div class="footer-right">
+          <span class="footer-pill">Kişisel veriye erişim yok</span>
+          <span class="footer-pill">Açık &amp; şeffaf çalışma mantığı</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Basit: Dahili linkler için yumuşak kaydırma (eski tarayıcılar için)
+    (function () {
+      var links = document.querySelectorAll('a[href^="#"]');
+      links.forEach(function (link) {
+        link.addEventListener("click", function (e) {
+          var targetId = this.getAttribute("href").slice(1);
+          if (!targetId) return;
+          var target = document.getElementById(targetId);
+          if (!target) return;
+          e.preventDefault();
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
